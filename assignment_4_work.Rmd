@@ -1,0 +1,344 @@
+---
+title: "STAT 4410/8416 Homework 4"
+author: "VanSteenbergen Nicolaas"
+date: "Due on Nov 8, 2018"
+output:
+  pdf_document: default
+  word_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+library(knitr)
+opts_chunk$set(fig.align='center', dpi=100, message=FALSE, warning=FALSE, cache=TRUE)
+output <- opts_knit$get("rmarkdown.pandoc.to")
+if(!is.null(output)) {
+if (output=="html") opts_chunk$set(out.width = '400px') else
+  opts_chunk$set(out.width='.6\\linewidth')
+}
+```
+
+```{r, echo=F}
+library(XML)
+library(lubridate)
+library(ggplot2)
+library(plyr)
+library(dplyr)
+library(reshape2)
+library(data.table)
+library(stringr)
+library(tm)
+library(readr)
+```
+
+1.
+
+
+a)
+
+```{r, echo=F}
+myUrl <- 'http://www.ggobi.org/book/data/olive.xml'
+olive <- xmlParse(myUrl)
+olive_root <- xmlRoot(olive)
+xmlName(olive_root)
+```
+
+
+b)
+
+```{r, echo=F}
+cvPath <- '//ggobidata/data/variables/categoricalvariable/@name'
+cvList <- xpathApply(olive ,cvPath) #xmlAttrs)
+cvNames <- as.vector(unlist(cvList))
+cvNames
+```
+
+
+c)
+
+```{r, echo=F}
+rvPath <- '//ggobidata/data/variables/realvariable/@name'
+rvList <- xpathApply(olive ,rvPath) #xmlAttrs)
+rvNames <- as.vector(unlist(rvList))
+rvNames
+```
+
+
+d)
+
+```{r, echo=F}
+dataPath <- '//ggobidata/data/records/record'
+olivedat <- xpathApply(olive ,dataPath, xmlValue)
+olivedat <- gsub('\n', '', olivedat)
+olivedat <- gsub('  ', ' ', olivedat)
+olivedat <- strsplit(olivedat, split= " ")
+```
+
+```{r, echo=F}
+oliveframe <- do.call(rbind.data.frame, olivedat)
+names(oliveframe) <- c(cvNames, rvNames)
+head(oliveframe)
+```
+
+
+e)
+
+```{r, echo=F, fig.height= 6, fig.width=12}
+ggplot(oliveframe, aes(area, as.numeric(palmitic))) + geom_bar(stat = 'Identity') + facet_grid(~oliveframe$region) + xlab('Regions with Sub-Areas') + ylab('% fatty acid: Palmitic')
+```
+We can see that Palmitic has a vastly larger presence in Region 1, especially area 3.
+
+
+f)
+
+```{r, eval=FALSE}
+r <- xmlRoot(olive)
+xmlSApply(r[[1]][[2]], xmlGetAttr, "name")
+```
+It is searching through the XML file and grabbing the attribute names in the 1st list in the 1st list and 2nd list of that list, which are the 'variables'. Then it gets the names of the categorical and realvariables because they are the attributes. This is an efficient way of getting the attribute names.
+
+
+
+2.
+
+
+a)
+
+```{r, echo=F}
+myDate <- "2017-10-30 19:50:21"
+
+myDate <- as.POSIXct(myDate, format="%Y-%m-%d %H:%M:%S")
+
+chi_myDate <- force_tz(myDate, tz= 'America/Chicago')
+
+chi_myDate
+```
+
+
+b)
+
+```{r}
+weekdays(myDate)
+```
+
+
+c)
+
+```{r}
+weekdays(myDate + years(100))
+```
+
+
+d)
+
+```{r}
+myDate + months(1)
+```
+The reason the timezone changed is because of daylight savings time. It happens early November/Late October so in order to keep the same time and just add to the month, it needs to be in a timezone 1 hour ahead (Eastern time).
+
+
+e)
+
+```{r, echo=F}
+due_date <- '2018-11-8 23:59:00'
+
+due_date <- as.POSIXct(due_date, format="%Y-%m-%d %H:%M:%S")
+
+current_date <- Sys.time()
+
+difftime(due_date, current_date, units="mins")
+```
+
+
+f)
+
+```{r, echo=F}
+myYears <- seq(1715,2018, by=1)
+
+is_leapyear <- function(year) {
+  return(((year %% 4 == 0) & (year %% 100 != 0)) | (year %% 400 == 0))
+}
+
+leapYears <- is_leapyear(myYears)
+
+leapYears <- myYears[leapYears]
+
+leapYears
+```
+
+
+g)
+
+```{r, echo=F}
+diff_years <- diff(leapYears)
+
+diff_4 <- diff_years == 4
+
+leapYears[diff_4]
+```
+
+
+```{r, echo=F}
+diff_years <- diff(leapYears)
+
+diff_8 <- diff_years == 8
+
+leapYears[diff_8]
+```
+
+
+```{r, echo=F}
+first_day <- '1796-12-31'
+
+second_day <- '1896-01-01'
+
+first_day <- as.POSIXct(first_day, format="%Y-%m-%d")
+
+second_day <- as.POSIXct(second_day, format="%Y-%m-%d")
+
+difftime(second_day, first_day, units="days")
+```
+
+
+
+3. On txt file turned in separately.
+
+
+4.
+
+
+a)
+
+```{r, echo=F}
+bike_rental <- read.csv(file='C:/Users/Nico/Desktop/Data Science/bicycle-rents.csv')
+
+head(bike_rental)
+```
+
+
+b)
+
+```{r, echo=F}
+bike_days <- bike_rental
+
+bike_days$day <- as.Date(bike_days$rent_date)
+```
+
+```{r, echo=F}
+bike_days <- bike_days %>%
+  group_by(day) %>%
+  count()
+```
+
+```{r, echo=F, fig.height= 6, fig.width=12}
+ggplot(bike_days, aes(day, n)) + geom_line() + xlab("Day") + ylab("Number of Rentals")
+```
+
+
+c)
+
+```{r, echo=F}
+myDat <- bike_rental
+
+myDat$weekDay <- lubridate::wday(myDat$rent_date, label = T, abbr = F)
+
+myDat$hourDay <- hour(myDat$rent_date)
+
+head(myDat)
+```
+
+
+d)
+
+```{r, echo=F}
+weekDat <- myDat %>%
+  group_by(weekDay) %>%
+  count()
+
+weekDat  
+```
+
+
+e)
+
+```{r, echo=F, fig.height= 6, fig.width=12}
+ggplot(weekDat, aes(weekDay, n)) + geom_point() + xlab("Day of Week") + ylab("Number of Rentals")
+```
+
+
+f)
+
+```{r, echo=F}
+hourDat <- myDat %>%
+  group_by(weekDay, hourDay) %>%
+  count()
+
+head(hourDat)
+```
+
+
+g)
+
+```{r, echo=F, fig.height= 6, fig.width=12}
+ggplot(hourDat, aes(hourDay, n)) + geom_line(aes(color=hourDat$weekDay)) + xlab("Hour") + ylab("Number of Rentals")
+```
+
+
+
+5. 
+
+
+a)
+
+```{r, echo=F}
+R_J <- readLines('http://shakespeare.mit.edu/romeo_juliet/full.html')
+```
+
+```{r, echo=F}
+
+#mono_start <- '<A NAME=\\d+\\.\\d+\\.\\d+>'
+#mono_end <- '</A>'
+
+R_J_clean <- unlist(str_extract_all(R_J, '<A NAME=\\d+\\.\\d+\\.\\d+>(.*?)</A>'))
+
+R_J_clean <- unlist(str_extract_all(R_J_clean, '>.*<'))
+
+R_J_clean <- gsub('>|<', '', R_J_clean)
+
+R_J_clean <- str_extract_all(R_J_clean, '\\b\\w+\\b')
+
+R_J_clean <- tolower(unlist(R_J_clean))
+```
+
+```{r, echo=F}
+seq_RJ <- seq_along(R_J_clean)
+
+romeo <- cumsum(R_J_clean == 'romeo')
+
+love <- cumsum(R_J_clean == 'love')
+```
+
+```{r, echo=F}
+df_RJ <- data.frame("total_count" = seq_RJ)
+df_RJ$roemo <- cumsum(R_J_clean == 'romeo')
+df_RJ$love <- cumsum(R_J_clean == 'love')
+```
+
+```{r, echo=F}
+melt_RJ <- melt(df_RJ, id.vars = 'total_count')
+```
+
+```{r, echo=F, fig.height= 6, fig.width=12}
+ggplot(melt_RJ, aes(total_count, value)) + geom_line(aes(color=variable)) + xlab("Total words count") + ylab("Cumulative count of Love and Romeo")
+```
+
+
+
+6.
+**Bonus (2 points) question for all** : In the United States, a Consumer Expenditure Survey (CE) is conducted each year to collect data on expenditures, income, and demographics. These data are available as public-use microdata (PUMD) files in the following link. Download the data for the year 2016 and explore. Provide some plots and numerical summary that creates some interest about this data.
+
+https://www.bls.gov/cex/pumd.htm
+
+
+*Couldn't find the file.
+
