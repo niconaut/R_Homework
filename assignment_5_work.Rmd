@@ -1,0 +1,375 @@
+---
+title: "STAT 4410/8416 Homework 5"
+author: "VanSteenbergen Nicolaas"
+date: "Due on Nov 30, 2018"
+output:
+  pdf_document: default
+  word_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+library(knitr)
+opts_chunk$set(fig.align='center', dpi=100, message=FALSE, warning=FALSE, cache=TRUE)
+output <- opts_knit$get("rmarkdown.pandoc.to")
+if(!is.null(output)) {
+if (output=="html") opts_chunk$set(out.width = '400px') else
+  opts_chunk$set(out.width='.6\\linewidth')
+}
+```
+
+```{r, echo=F}
+library(XML)
+library(lubridate)
+library(ggplot2)
+library(plyr)
+library(dplyr)
+library(reshape2)
+library(data.table)
+library(stringr)
+library(tm)
+library(readr)
+library(twitteR)
+library(RCurl)
+library(RMySQL)
+library(dbplyr)
+```
+
+1.
+
+
+a)
+
+```{r , echo=FALSE}
+con = dbConnect(MySQL(),user="training", password="training123", dbname="trainingDB", host="localhost")
+```
+
+
+b)
+
+```{r, echo=FALSE}
+myQuery <- "select pclass, sex, survived, avg(age) as avg_age from titanic group by pclass, sex, survived;"
+
+avgAge <- dbGetQuery(con, myQuery)
+
+avgAge
+```
+
+
+c)
+
+```{r, echo=FALSE}
+ggplot(avgAge, aes(pclass, avg_age, color=survived, group=survived)) + geom_point(size=3) + geom_line() + facet_wrap(~sex)
+```
+
+d)
+
+
+```{r, echo=FALSE}
+conDplyr = src_mysql(dbname = "trainingDB", user = "training", password = "training123", host = "localhost")
+
+avgAge_dplyr <- conDplyr %>%
+  tbl("titanic") %>%
+  select(pclass, sex, survived, age) %>%
+  group_by(pclass, sex, survived) %>%
+  summarise(age = avg(age))
+  
+show_query(avgAge_dplyr)
+```
+
+e)
+
+```{r, echo=FALSE}
+avgAge3 <- conDplyr %>%
+  tbl("titanic") %>%
+  select(name, age, sex, pclass) %>%
+  arrange(desc(age)) %>%
+  group_by(age) %>%
+  filter(age!=0) %>%
+  collect()
+
+head(avgAge3, 5)
+tail(avgAge3, 5)
+```
+
+```{r, echo=FALSE}
+myQuery <- "select name, age, sex, pclass from titanic;"
+
+dbGetQuery(con, myQuery)
+```
+
+
+
+2.
+
+a)
+```{r, echo=FALSE}
+myUrl <- getURL("https://en.wikipedia.org/wiki/List_of_languages_by_number_of_native_speakers")
+```
+
+
+b)
+```{r, echo=FALSE}
+tables <- readHTMLTable(myUrl)
+
+datRaw <- tables[[2]]
+```
+
+
+c)
+```{r, echo=FALSE}
+dat <- datRaw[c(2,3)]
+
+colnames(dat)[1] <- "language"
+colnames(dat)[2] <- "nativeSpeaker"
+
+head(dat)
+```
+
+
+d)
+```{r, echo=FALSE}
+cleanDat <- dat
+
+cleanDat$language <- gsub('\\(.*\\)', '', cleanDat$language)
+cleanDat$language <- gsub('\\)|\\(', '', cleanDat$language)
+
+cleanDat$language <- gsub('\\[.*\\]', '', cleanDat$language)
+cleanDat$language <- gsub('\\]|\\[', '', cleanDat$language)
+
+
+cleanDat$nativeSpeaker <- gsub('\\(.*\\)', '', cleanDat$nativeSpeaker)
+cleanDat$nativeSpeaker <- gsub('\\)|\\(', '', cleanDat$nativeSpeaker)
+
+cleanDat$nativeSpeaker <- gsub('\\[.*\\]', '', cleanDat$nativeSpeaker)
+cleanDat$nativeSpeaker <- gsub('\\]|\\[', '', cleanDat$nativeSpeaker)
+
+cleanDat <- cleanDat[-1, ] # drops the first row
+
+head(cleanDat)
+```
+
+
+e)
+
+```{r, echo=FALSE}
+cleanDat <- cleanDat[1:20, ] # select 20 rows
+
+cleanDat$nativeSpeaker <- as.numeric(cleanDat$nativeSpeaker)
+
+cleanDat <- cleanDat[order(cleanDat$nativeSpeaker), ]
+
+ggplot(cleanDat, aes(reorder(language, nativeSpeaker), nativeSpeaker)) + geom_bar(stat = "identity") + coord_flip()
+```
+
+
+
+3.
+
+a)
+```{r, echo=FALSE}
+myUrl <- getURL("https://www.boxofficemojo.com/oscar/bestpichist.htm?view=bymovie&sort=perc_dur&order=DESC&p=.htm")
+
+table <- readHTMLTable(myUrl)
+
+df_movies <- table[[5]]
+ 
+columnNames <- c("row","movie_title","year","pre_nom","pre_nom_perc","post_nom","post_nom_perc","post_awards","post_awards_perc","total_gross","oscar")
+
+colnames(df_movies) <- columnNames
+
+df_movies
+```
+
+```{r, echo=FALSE}
+reduced_movies <- df_movies[c(5,7,9,11)]
+
+clean_movies <- reduced_movies
+
+clean_movies$pre_nom_perc <- gsub('%', '', clean_movies$pre_nom_perc)
+
+clean_movies$post_nom_perc <- gsub('%', '', clean_movies$post_nom_perc)
+
+clean_movies$post_awards_perc <- gsub('%', '', clean_movies$post_awards_perc)
+
+
+
+clean_movies$pre_nom_perc <- as.numeric(clean_movies$pre_nom_perc)
+
+clean_movies$pre_nom_perc[is.na(clean_movies$pre_nom_perc)] <- 0
+
+
+clean_movies$post_nom_perc <- as.numeric(clean_movies$post_nom_perc)
+
+clean_movies$post_nom_perc[is.na(clean_movies$post_nom_perc)] <- 0
+
+
+clean_movies$post_awards_perc <- as.numeric(clean_movies$post_awards_perc)
+
+clean_movies$post_awards_perc[is.na(clean_movies$post_awards_perc)] <- 0
+
+clean_movies
+
+test <- clean_movies
+
+test <- clean_movies %>%
+  group_by(oscar) %>%
+  summarise(pre_nomination = mean(pre_nom_perc), post_nomination = mean(post_nom_perc), post_awards = mean(post_awards_perc))
+
+test <- melt(test, id="oscar")
+
+test
+# more efficient
+```
+
+```{r, echo=FALSE}
+ggplot(test, aes(variable, value)) + facet_grid(~oscar) + geom_bar(stat='identity') + xlab("") + ylab("revenue percentage") + theme(axis.text.x = element_text(angle = 90, hjust = 1))
+```
+It can be seen that on average the movies that won an oscar made a larger portion of their revenue post awards than the ones that were just nominated. Thier post nomination revenue is very similar, so the biggest difference is after the awards. This can be interpreted as people wanting to see an award winning movie, more than one that is just nominated. By this inequality, nominated movies make most of thier money prenomination.
+
+4.
+
+
+a)
+```{r, echo=FALSE}
+load("hw5-twitter-auth")
+
+setup_twitter_oauth(api_key,api_secret,access_token, access_token_secret)
+```
+
+
+b)
+```{r, echo=FALSE}
+dsTweet <- searchTwitter("data science job")
+dfTweet <- twListToDF(dsTweet)
+tweetText <- dfTweet$text
+head(tweetText)
+```
+
+c)
+
+```{r, echo=FALSE}
+rTweets <- searchTwitter("#chess", 300)
+sources <- sapply(rTweets, function(x) x$getStatusSource())
+sources <- gsub("</a>", "", sources)
+sources <- strsplit(sources, ">")
+sources <- sapply(sources, function(x) ifelse(length(x) > 1, x[2], x[1]))
+source_table = table(sources)
+```
+
+```{r, echo=FALSE}
+df <- data.frame(names(source_table), source_table)
+ggplot(df[df$Freq>7,], aes(reorder(sources,Freq), Freq)) + geom_bar(stat="identity") + coord_flip()
+```
+Can't get exactly 7 because there is a tie.
+
+
+d)
+```{r, echo=FALSE}
+rTweets <- searchTwitter("#chess", n=300)
+dTweets <- twListToDF(rTweets)
+head(dTweets)
+```
+
+e)
+
+```{r, echo=FALSE}
+library(lubridate)
+
+dTweets$hour <- hour(dTweets$created)
+
+TweetsHour <- dTweets %>%
+  group_by(hour) %>%
+  count()
+
+TweetsHour
+```
+
+```{r, echo=F, fig.height= 6, fig.width=12}
+ggplot(TweetsHour, aes(hour, n)) + geom_smooth(se=F) + xlab("Hour") + ylab("Number of Tweets")
+```
+
+f)
+
+```{r, echo=FALSE}
+dTweets_reduced <- dTweets %>%
+  select(text, screenName, retweetCount) %>%
+  arrange(desc(retweetCount))
+
+head(dTweets_reduced$text, 5)
+
+#more efficient
+```
+
+g)
+
+```{r, echo=FALSE}
+dTweets_reduced_15 <- head(dTweets_reduced,15)
+
+# more efficient
+
+ggplot(dTweets_reduced_15, aes(reorder(screenName, retweetCount),retweetCount)) + geom_bar(stat = 'identity') + coord_flip() + xlab("Twitter Handle") + ylab("Retweets")
+```
+
+
+
+5.
+
+```{r, echo=FALSE}
+crime <- readRDS("C:/Users/Nico/Desktop/Data Science/usaCrimeDat.rds", refhook = NULL)
+```
+
+```{r, echo=FALSE}
+crime_1 <- crime %>%
+  group_by(state, Year, totPop) %>%
+  summarise(total = sum(Count))
+
+crime_1$totPerc <- (crime_1$total/crime_1$totPop)*100
+
+crime_1
+
+crime_1 <- crime_1 %>%
+  filter(state == 'alabama')
+
+head(crime_1)
+```
+
+Lets take a look at Alabama and the percentage of people affected each year. It was low in the early 70s, but then spiked in the early 80s and 90s then dropped to a more consitent level in the 2000s. It is very interesting to see spikes in the early 80s and 90s, perhaps how often then census is taken affects the data on crime.
+```{r, echo=FALSE}
+ggplot(crime_1, aes(as.factor(Year), totPerc)) + geom_bar(stat = 'identity') + theme(axis.text.x = element_text(angle = 90, hjust = 1)) + xlab("Year") + ylab("Percent Crime Rate")
+```
+
+
+```{r, echo=FALSE}
+crime_2 <- crime %>%
+  select(state, Year, Crime, rate) %>%
+  group_by(state, Crime)
+
+crime_2 <- crime_2 %>%
+  filter(state == 'alabama') %>%
+  filter(Crime == 'Motor vehicle theft')
+```
+
+Continuing our investigation of Alabama, let's look at the rate of motor vehicle theft. One would think as the years go on and there are more people driving cars, it would become a big percentage of the crime. This is not the case, in fact, there appears to be no major trends with motor vehicle theft in Alabama. It varies widely most years, so making any predictions on it would be difficult.
+```{r, echo=FALSE}
+ggplot(crime_2, aes(as.factor(Year), rate)) + geom_line(group=1) + theme(axis.text.x = element_text(angle = 90, hjust = 1))
+```
+
+Looking into the overall frequency of violent crimes and property crimes will reveal if the danger is towards other people or just the property we own. With the following table we can tell that violent crime is much higher over the years than property crime.
+
+```{r, echo=FALSE}
+crime_4 <- crime %>%
+  select(state, Year, Crime, Count, totPop)
+
+crime_4 <- crime_4 %>%
+  group_by(Crime) %>%
+  summarise(total = sum(Count))
+
+crime_4$Percent <-round((crime_4$total/sum(crime_4$total)*100), digits = 2)
+
+crime_4 <- crime_4[-2]
+
+crime_4 <- crime_4[order(-crime_4$Percent),]
+
+kable(crime_4)
+```
