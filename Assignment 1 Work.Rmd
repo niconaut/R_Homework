@@ -1,0 +1,217 @@
+---
+title: "STAT 4410/8416 Homework 1"
+author: "VanSteenbergen Nicolaas"
+date: "Due on Sep 11, 2018"
+output:
+  pdf_document: default
+  html_document: default
+  word_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, fig.align='center')
+```
+
+*1)*
+
+**a)** Data Science is the coupling of scientific discovery and practice involving the collection, management, processing, analysis, visualization, and interpretation of vast amounts of heterogeneous data associated with a diverse array of scientific, translational, and interdisciplinary applications. It can also be more simply put that Data Science is the science of extracting meaningful information from data. 
+
+**b)** A data product is a data dependent product that has some commercial value. It could be another data set summarizing the original larger data set, an online tool, mobile app, or a report based on data. A widely used example of a data product is the credit score system because it takes an individuals financial data history (bill payments, amount owed, length of history, etc.), and gives it to banks where they can create a score range that lets them judge the credit of the individual. Based off their credit score the characteristics of the loan may change, for example, a lower score the higher the interest may be because they are more of a risk. Another popular example is Kelly Blue Book; it is a service that uses data on cars and car history to come up with an accepted value of the car. It takes in many physical factors about the car and its road history to generate the value. The information about the value is accessed by car businesses as well as individuals selling the car to get the best deal for the car they are selling.
+
+**c)** Cleveland’s thoughts about the relationship between Data Science and Statistics is that Data Science has always been a part of statistics, specifically the analysis of it, which did not have a formal name previously. In fact, some of the biggest innovations in statistics have come from the people who are close to the analysis of data, which he states is a big difference between data science and traditional statistics. He expands on the idea of this new field that everyone who pursues it should have a strong probability and statistics background. But just as important as statistics, the data scientist should have computational knowledge to help with large computations. He specifically calls the new field of data science “an altered field” of statistics that focuses more on data analysis and practices a wider view of many different disciplines.
+
+**d)** The biggest differences between data science and computer science are the ability to analyze the data and the level of understanding of statistics. The computer scientists have limited abilities when approaching the analysis of data even though they have become very good at data mining. This is echoed for the data scientists who have limited knowledge of computing environments. Data Science should be seen as the intersection of statistics and computer science, rather than an extension of either of the disciplines. Another big difference between data science and computer science we discussed is the ability to clean the data. This ability is lacking with the computer scientists but is a strength with data scientists because this task makes up close to 85% of the job. Overall, data science is a more focused field on data analysis and how to gain value from data, where computer science is more general programming and software development.
+
+**e)** Data literacy is the ability to collect and manipulate data then come up with meaningful insights about the data collected. It is extremely important and is used daily by many different professionals or academics. It is used to optimize resource allocation and help maximize profits, as well as reliably make predictions about the future of a business or product. In the academic world researches use data to better understand their field and make predictions on where research can take them. By being data literate one can understand more about the world and be able to communicate with a wider audience. Not only is it hugely important for the business professionals and academics but it is getting increasingly important for everyone regardless of their profession. Having the ability to understand data whether gigabytes or petabytes can help make better decisions financially and professionally and with a greater data literacy the outcomes of decisions will be more positive.
+
+**f)** Common Task Framework, or CTF, is a process or ‘framework' of competition used to judge the efficiency of a specific task. It must include publicly available training data sets, competitors working towards the same goal, and referees to judge and award points. By being under the same rules, it allows large numbers of researchers to compete at any given common task challenge, and allows for efficient and unemotional judging of challenge winners. This leads to immediate applications in a real-world application, because it has been tested in the competition and is ready for immediate deployment. By referencing the winner a 'best method' has been developed and can be replicated. It has been the source for innovation in the predictive analytics world and is now widely used. He mentioned it because of its importance in the field and to give background on how using CTFs lead to new technologies and ideas.
+
+**g)** There are six activities of Greater Data Science:
+
+1) Data Exploration and Preparation: This is where most of the effort gets put into when doing data science activities. It involves the exploration of data with sanity-checks and discovering unexpected features. Along with cleaning the data by using a range of reformatting techniques. 
+
+2) Data Representation and Transformation: With this activity learning a data source technology is key, and some may learn many over their years as a data scientist. This can include modern databases such as SQL and noSQL. They also should know the mathematical representations of special types; like acoustic, image, sensor, etc.
+
+3) Computing with Data: Data scientists should know several languages for data analysis and data processing. Not only are the more popular ones important but specific ones for cluster and cloud computing can come in handy as well. It is important to develop workflows with the languages and make them available for use in future projects.
+
+4) Data Modeling: Data scientists should know and practice tools in both generative modeling and predictive modeling.
+
+5) Data Visualization: Understanding how to best show the data is very important for data scientists because it allows them to communicate with a wider audience. These presentations can present conclusions and predictions about the past, present, and future.
+
+6) Science about Data Science: This is the study of data scientists who are actually doing data science 'in the wild'. This is helpful to measure the effectiveness of workflow in a business and optimize data science outside of the academic field.
+
+
+*2)*
+
+The first steps once data is loaded into R is to do some quick data exploration. This consists of taking the head, tail, summary, and structure of the data; then use plot() to get plots of the data. This will give a nice snapshot of the data that has been loaded and the plots might reveal interesting trends quickly.
+
+```{r}
+
+url <- "http://www.ggobi.org/book/data/tips.csv"
+
+myData <- read.table(url, header=T, sep=",")
+
+```
+
+```{r}
+
+head(myData)
+
+tail(myData)
+
+summary(myData)
+
+str(myData)
+
+plot(myData)
+
+```
+
+
+*3)*
+
+The big difference between 'moo' and 'foo' is the location of the print function. The 'foo' function prints the x value before doing the logic check of if 'x' is greater than 1, so it prints the highest 'x' immediately. The 'moo' function does the logic check before the print function so until the logic test is false it will not print. While it does go through the print function, those outputs are put on the stack until the logic check is false, then once that happens it takes the most recently printed value and prints it first and works its way back through the stack. They will have opposite print orders because of this. A quick way to think about it is 'moo' is first in last out of values.
+
+
+*4)*
+
+**a)**
+
+``` {r}
+
+getRoot <- function(x) {
+  if(x<0){
+    return("not possible")
+  }
+  else{
+    return(sqrt(x))
+  }
+}
+
+```
+
+``` {r}
+
+getRoot(4)
+
+getRoot(-4)
+
+```
+
+``` {r}
+
+getRoot(c(4,-4,9,-16))
+
+```
+
+**b)** The function works for single operations but not for vector inputs. It does not give the desired output because the function has not been vectorized, so it cannot accept vectors.
+
+``` {r}
+
+getRoot <- function(x){
+  ifelse(x > 0,sqrt(x),"not possible")
+}
+
+```
+
+**c)** I fixed it by using ifelse which is a vectorizing function and now should be able to accept vector inputs.
+
+``` {r}
+
+getRoot(c(4,-4,9,-16))
+
+```
+
+
+*5)*
+
+**a)**
+  
+``` {r, echo = F}
+
+myVector <- rexp(n= 500000, rate = .2)
+
+```
+
+``` {r fig1, fig.height=4, fig.width=7, fig.align="left", echo = F}
+
+hist(myVector)
+
+```
+
+**b)**
+  
+``` {r, echo = F}
+
+myMatrix <- matrix(myVector,ncol = 500)
+
+```
+
+``` {r}
+
+dim(myMatrix)
+
+```
+
+**c)**
+  
+``` {r, echo = F}
+
+matrixColMeans <- colMeans(myMatrix)
+
+```
+
+``` {r fig2, fig.height=4, fig.width=7, fig.align="left", echo = F}
+
+hist(matrixColMeans)
+
+```
+
+**d)** The two plots are different because one is the frequency of the all the random numbers and the other is the frequency of mean of numbers in the columns, which according to the central limit theorem tends toward a normal distribution. So even though the numbers are random as seen in the first graph, a 'bell curve' will form eventually; as we can see in the second graph. 
+
+
+*6)*
+
+**a)**
+  
+``` {r, echo = F}
+
+mySeq <- seq.int(from=0, to=12, by = 3)
+
+```
+
+``` {r}
+
+mySeq
+
+```
+
+**b)** With rep(mySeq,3) it repeats the whole sequence of mySeq 3 times back to back to back. For rep(mySeq, each=3) it returns each element 3 times in a row in order so the elements are grouped together, unlike in rep(mySeq,3) where they are not grouped. Lastly, rep(mySeq,mySeq) looks at the value of each element and repeats it in order based on the number value of the element. So it repeats zero, zero times; three, three times; six, six times; nine, nine times; and twelve, twelve times.
+
+**c)**
+
+``` {r, echo=FALSE}
+
+mySeq <- c(rep(mySeq,mySeq),seq(from=1, to=6, by=1))
+
+```
+
+``` {r}
+
+length(mySeq)
+
+```
+
+**d)**
+
+``` {r, echo=FALSE}
+
+sqMtrx <- matrix(mySeq, nrow=6, ncol=6, byrow= TRUE)
+
+```
+
+``` {r}
+
+sqMtrx[4,3]
+
+```

@@ -1,0 +1,443 @@
+---
+title: "STAT 4410/8416 Homework 3"
+author: "VanSteenbergen Nicolaas"
+date: "Due on Oct 19, 2018"
+output:
+  pdf_document: default
+  html_document: default
+  word_document: default
+fig_width: 7
+fig_height: 4
+---
+
+```{r setup, include=FALSE, message=F, warning=F, echo=F}
+knitr::opts_chunk$set(echo = TRUE, fig.align='center')
+```
+
+```{r, message=F, warning=F, echo=F}
+library(knitr)
+library(plyr)
+library(reshape2)
+library(ggplot2)
+library(data.table)
+library(stringr)
+library(tm)
+library(readr)
+library(nycflights13)
+library(lubridate)
+library(dplyr)
+```
+
+*1)*
+
+*a)*
+```{r, echo=F}
+bigDataSample <- read.csv(file='C:/Users/Nico/Desktop/Data Science/bigDataSample.csv')
+```
+
+```{r, echo=F}
+dat <- bigDataSample %>%
+  select(contains('human'))
+
+head(dat)
+```
+
+*b)*
+
+```{r, echo = F}
+col_length <- nchar(colnames(dat))
+colnames(dat) <- substr(colnames(dat),col_length,col_length)
+head(dat)
+```
+
+*c)*
+
+```{r, echo = F}
+dat_nice_table <-dat %>%
+  group_by(b) %>%
+  summarize_all(funs(mean))
+
+kable(dat_nice_table)
+```
+
+*d)*
+
+```{r, echo = F}
+mdat <- melt(dat, id = 'b')
+
+head(mdat)
+```
+
+*e)*
+
+```{r, echo = F}
+ggplot(mdat, aes(value, color = variable)) + geom_density(aes(fill = variable), alpha = 0.3) + facet_wrap(~b)
+
+```
+
+*f)*
+
+```{r}
+freadBig <- fread('C:/Users/Nico/Desktop/Data Science/bigDataSample.csv')
+
+head(select(freadBig, contains('human')))
+```
+It would not be wise to the same thing with a larger data set. I used fread() to read in the data frame, then selected the columns that only contains human in them to get the 5 desired ones.
+
+*2)*
+ 
+*a)*
+
+```{r, echo=F}
+lAddress <- readLines('lincoln-last-speech.txt')
+
+substr(lAddress[1], start = 1, stop = 70)
+```
+
+*b)*
+
+```{r, echo=F}
+vWord <- tolower(lAddress)
+vWord <- str_replace_all(vWord,"[^a-zA-Z\\s]", " ")
+vWord <- str_replace_all(vWord, "[\\s]+", " ")
+vWord <- str_split(vWord, " ")
+indexes <- which(vWord == '')
+if(length(indexes) > 0){
+  vWord <- vWord[-indexes]
+ }
+vWord <- unlist(vWord)
+head(vWord)
+```
+
+*c)*
+```{r, echo=F}
+sWords <- stopwords()
+
+head(sWords)
+```
+
+*d)*
+```{r, echo=F}
+cleanWordBoo <- vWord %in% sWords
+cleanWord <- vWord[!cleanWordBoo]
+head(cleanWord)
+```
+
+*e)*
+```{r, echo=F}
+fWord <- sort(table(cleanWord), decreasing = T)
+fWord <- fWord[1:15]
+kable(fWord[1:5])
+```
+
+*f)*
+```{r, echo=F}
+fWord <- data.frame(fWord)
+ggplot(fWord, aes(cleanWord, Freq)) + geom_col() + coord_flip()
+```
+
+*g)*
+It makes the variable name (word names) easier to read and less crowded, so instead of appearing on the bottom, they read nicely on the left. If we didn't flip, they would be cluttered on the bottom and tough to read.
+
+*h)*
+```{r, echo=F}
+ggplot(fWord, aes(cleanWord, Freq)) + geom_point() + coord_flip()
+```
+A scatter plot looks much simpler since there are only dots. Just like he did in the slides for Obama's speech.
+
+*3)*
+
+*a)*
+
+```{r}
+vText <- c('google','logo','dig', 'blog', 'boogie' )
+
+pattern <- 'o?go?'
+
+gsub(pattern, '.', vText)
+```
+
+*b)*
+
+```{r}
+vPhone <- c('874','6783','345345', '32120', '468349', '8149674') 
+
+pattern <- '^\\d{4,6}$'
+
+gsub(pattern, 'found', vPhone)
+
+```
+
+*c)*
+
+```{r}
+myText <- "#y%o$u @g!o*t t9h(e) so#lu!tio$n c%or_r+e%ct" 
+
+gsub('[^A-Za-z ]+', '', myText)
+```
+
+*d)*
+
+```{r}
+myText <- "Each of the three and four character words will be gone now"
+
+gsub('\\b\\w{3,4}\\b', '...', myText)
+```
+
+*e)*
+
+```{r, message = F}
+bigText <- 'There were three 20@14 numbers hidden in 500 texts' 
+
+unlist(str_extract_all(bigText, '\\d+'))
+```
+
+*f)*
+
+```{r}
+myText <- 'The salries are reported (in millions) for every companies.'
+
+parth <- unlist(str_extract_all(myText, '\\(.*\\)'))
+gsub('\\)|\\(', '', parth)
+```
+
+*g)*
+
+```{r}
+myText <- c("H_bill.xls", "Big_H_pay.xls", "Use_case_fine-book.pdf")
+dot_under <- str_extract(myText,'\\_(.*?)\\.')
+dot_under <- gsub('_?.*_','', dot_under)
+dot_under <- gsub('\\.','', dot_under)
+dot_under
+```
+
+*h)*
+```{r}
+myText <- 'At 10am we had 40ml of water, 5 lb of meat, 3lb of salt and 20 apples.'
+
+num_only <- str_extract_all(myText,'\\d+.?ml|\\d+.?lb')
+num_only <- unlist(str_extract_all(num_only,'\\d+'))
+num_only
+```
+
+
+*i)*
+```{r}
+myText <- 'Math symbols are $written$ in $between$ dollar $signs$' 
+dolla <- unlist(str_extract_all(myText, '\\$\\w+\\$'))
+dolla <- gsub('\\$', '', dolla)
+dolla
+length(dolla)
+```
+
+
+*j)*
+```{r}
+myText <- 'equation1: 2+3=5, equation2 is: 2*3=6, do not extract 2w3=6' 
+
+str_extract_all(myText, '\\d+\\+\\d=\\d|\\d+\\*\\d+\\=\\d+')
+```
+
+
+*k)*
+```{r}
+myText <- 'the judge will budget for the most expensive zoology equipment' 
+
+pattern <- '[a-z]'
+
+alpha <- unlist(str_extract_all(myText, pattern))
+alphaBoo <- letters %in% alpha
+sum(alphaBoo)
+letters[!alphaBoo]
+```
+
+*4)*
+
+*a)*
+
+Structure:
+```{r, echo=F}
+myText <- read_lines('http://mamajumder.github.io/index.html')
+
+str(myText)
+```
+Head:
+```{r, echo=F}
+head(myText)
+```
+
+*b)*
+
+```{r}
+pattern <- 'http.*'
+
+http <- str_extract_all(myText, pattern)
+http <- unlist(http)
+http <- http[!is.na(http)]
+gsub('".*', '', http)
+```
+
+*c)*
+
+```{r}
+email_extract <- '[_a-z0-9-]+(\\.[_a-z0-9-]+)*\\@[_a-z0-9-]+\\.[_a-z0-9]+'
+
+extracted_email <- str_extract(myText, email_extract)
+
+extracted_email <- extracted_email[!is.na(extracted_email)]
+
+extracted_email
+```
+
+*d)*
+
+```{r}
+phone_fax_extract <- '(\\d[.-])?\\(?\\d{3}\\)?[-. ]?\\d{3}[-. ]?\\d{4}\\b'
+
+extracted_phone_fax <- str_extract(myText, phone_fax_extract)
+
+extracted_phone_fax <- extracted_phone_fax[!is.na(extracted_phone_fax)]
+
+extracted_phone_fax
+```
+
+*e)*
+
+```{r}
+myGGplot2 = readLines('http://docs.ggplot2.org/current/')
+
+Pt <- 'geom.+\\.'
+myGeom <- str_extract(myGGplot2, Pt)
+myGeom <- unlist(myGeom)
+myGeom <- myGeom[!is.na(myGeom)]
+myGeom <- gsub('\\..*', '', myGeom)
+myGeom <- myGeom[!duplicated(myGeom)]
+myGeom <- myGeom[2:31]
+myGeom
+length(myGeom)
+```
+30 unique ones.
+
+*5)*
+
+*a)*
+
+```{r, echo=F, warning=F, message=F}
+cancelled_flights <- flights %>%
+  group_by(month) %>%
+  summarize(percent_cancelled = sum(is.na(dep_time))/length(dep_time))
+ 
+ggplot(cancelled_flights, aes(as.factor(month), percent_cancelled)) + geom_bar(stat = 'identity')
+```
+February had the highest, while October had the lowest. Perhaps there is more snow in February and it is a busier travel season. October is moderate weather and less busy time to travel so there will be less cancellations.
+
+*b)*
+
+```{r, echo=F}
+sort(table(flights$tailnum), decreasing = T)[1]
+```
+N725MQ had the most flights at 575.
+
+```{r, echo=F}
+busiest_plane <- flights %>%
+  select(year, month, day, origin, tailnum, time_hour) %>%
+  filter(year == '2013') %>%
+  filter(tailnum == 'N725MQ')
+```
+
+```{r, echo=F}
+busiest_plane$week <- week(busiest_plane$time_hour)
+```
+
+```{r, echo=F}
+ggplot(busiest_plane, aes(week)) + geom_bar()
+```
+
+*c)*
+
+```{r, echo=F}
+oldest_plane <-planes %>%
+  arrange(year)
+
+oldest_plane[1,1]
+```
+The oldest plane is N381AA
+
+```{r, echo=F}
+sum(unique(planes$tailnum) %in% unique(flights$tailnum))
+```
+3322 planes from NYC are included.
+
+*d)*
+
+```{r, echo=F}
+sum(is.na(planes$year))
+```
+70 have a missing date of manufacturer
+
+```{r, echo=F}
+p <- planes
+
+p$manufacturer[p$manufacturer %in% c('CANADAIR','CANADAIR LTD')] <- 'CANADAIR'
+
+p$manufacturer[p$manufacturer %in% c('MCDONNELL DOUGLAS AIRCRAFT CO','MCDONNELL DOUGLAS CORPORATION', 'DOUGLAS', 'MCDONNELL DOUGLAS')] <- 'MCDONNELL DOUGLAS'
+
+p$manufacturer[p$manufacturer %in% c('AIRBUS INDUSTRIE','AIRBUS')] <- 'AIRBUS'
+```
+
+```{r, echo=F}
+sort(table(p$manufacturer), decreasing = T)[1:5]
+```
+The five most common are Boeing, Airbus, Bombardier inc, Embraer, and McDonnell Douglas.
+
+```{r, echo=F}
+p$manufacturer[!(p$manufacturer %in% c('BOEING','AIRBUS','EMBRAER','MCDONNELL DOUGLAS','BOMBARDIER INC'))] <- 'OTHER'
+```
+
+```{r, echo=F}
+p_graph <- p %>%
+  select(year, manufacturer)
+```
+
+```{r, echo=F}
+manfac <- ddply(p_graph,1:2,nrow)
+```
+
+```{r, fig.height=8, fig.width=8, echo=F}
+ggplot(manfac, aes(as.factor(year),V1)) + geom_col(aes(fill = manufacturer)) + coord_flip() + ylab("proportion of each manufacturer") + xlab("year") 
+```
+Yes it has changed a lot over time. Earlier on there were not a lot of plane manufactureres. Then in the early 2000s a few companies dominated the market with 'other' being very small. Recently the production has halfed and most recently 'other' companies are starting to produce more.
+
+*e)*
+
+```{r, echo=F}
+july <- weather %>%
+  filter(month == 7)
+```
+
+*e1)*
+
+```{r, echo=F, warning=F, message=F, fig.height=3, fig.width=7}
+ggplot(july, aes(x= wind_speed, y= temp, group = wind_speed)) + geom_boxplot()
+```
+
+*e2)*
+
+```{r, echo=F, fig.height=3,fig.width=7}
+ggplot(july, aes(dewp, humid)) + geom_density_2d()
+```
+
+*e3)*
+
+```{r, echo=F,fig.height=3,fig.width=7}
+ggplot(july, aes(precip,visib)) + geom_point()
+```
+
+*6)*
+
+```{r}
+library(readxl)
+file <- 'C:/Users/Nico/Desktop/Data Science/clean-dat-before.xls'
+read_excel(file)
+```
+
